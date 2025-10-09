@@ -4,6 +4,7 @@ from typing import TypeVar
 from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.domains._base.exceptions import (
     CreateFailedException,
@@ -31,12 +32,29 @@ class BaseCRUDInterface[T](ABC):
     @abstractmethod
     async def delete(self, id: int) -> None: ...
 
+    @abstractmethod
+    def create_sync(self, obj: T) -> T: ...
+
+    @abstractmethod
+    def get_by_id_sync(self, id: int) -> T | None: ...
+
+    @abstractmethod
+    def update_sync(self, id: int, data: dict) -> T: ...
+
+    @abstractmethod
+    def delete_sync(self, id: int) -> None: ...
+
+
 
 class CRUDRepository(BaseCRUDInterface[T]):
     model: type[T]
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession | Session):
         self.session = session
+
+    # -------------------- #
+    #   Async CRUD         #
+    # -------------------- #
 
     async def create(self, obj: T) -> T:
         try:
@@ -98,6 +116,74 @@ class CRUDRepository(BaseCRUDInterface[T]):
             await self.session.commit()
         except SQLAlchemyError as e:
             await self.session.rollback()
+            raise DeleteFailedException(
+                f"Failed to delete {self.model.__name__} id={id}"
+            ) from e
+
+    # -------------------- #
+    #   Sync CRUD          #
+    # -------------------- #
+
+    def create_sync(self, obj: T) -> T:
+        try:
+            self.session.add(obj)
+            self.session.commit()
+            self.session.refresh(obj)
+            return obj
+        except IntegrityError as e:
+            self.session.rollback()
+            print(f"[DEBUG] SQLAlchemy error: {type(e).__name__} — {e}")
+            raise CreateIntegrityException(
+                f"Integrity error on create {self.model.__name__}"
+            ) from e
+        except SQLAlchemyError as e:
+            self.session.rollback()
+            print(f"[DEBUG] SQLAlchemy error: {type(e).__name__} — {e}")
+            raise CreateFailedException(
+                f"Failed to create {self.model.__name__}"
+            ) from e
+
+    def get_by_id_sync(self, id: int) -> T | None:
+        try:
+            stmt = select(self.model).where(self.model.id == id)
+            result = self.session.execute(stmt)
+            return result.scalar_one_or_none()
+        except SQLAlchemyError as e:
+            raise CRUDException(
+                f"Failed to get {self.model.__name__} by id={id}"
+            ) from e
+
+    def update_sync(self, id: int, data: dict) -> T:
+        try:
+            stmt = (
+                update(self.model)
+                .where(self.model.id == id)
+                .values(**data)
+                .returning(self.model)
+            )
+            result = self.session.execute(stmt)
+            updated = result.scalar_one_or_none()
+            if updated is None:
+                raise NotFoundException(f"{self.model.__name__} id={id} not found")
+            self.session.commit()
+            return updated
+        except NotFoundException:
+            raise
+        except SQLAlchemyError as e:
+            self.session.rollback()
+            raise UpdateFailedException(
+                f"Failed to update {self.model.__name__} id={id}"
+            ) from e
+
+    def delete_sync(self, id: int) -> None:
+        try:
+            stmt = delete(self.model).where(self.model.id == id)
+            result = self.session.execute(stmt)
+            if result.rowcount == 0:
+                raise NotFoundException(f"{self.model.__name__} id={id} not found")
+            self.session.commit()
+        except SQLAlchemyError as e:
+            self.session.rollback()
             raise DeleteFailedException(
                 f"Failed to delete {self.model.__name__} id={id}"
             ) from e

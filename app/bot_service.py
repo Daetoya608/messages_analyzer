@@ -27,12 +27,6 @@ async def handle_text_messages(client: Client, message: TgMessage):
     await telegram_service.process_new_message(message)
 
 
-
-# async def main():
-#     async with user_bot:
-#         print("Бот запущен!")
-#         await idle()  # удерживает клиента активным, пока не остановишь
-
 async def main():
     await init_models()
     await user_bot.start()
