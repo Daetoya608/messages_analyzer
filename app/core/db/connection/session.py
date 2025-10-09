@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-
+from app.core.db import Base
 from app.core.config import get_settings
 
 
@@ -27,10 +27,21 @@ class SessionManager:
         )
 
 
+async def init_models() -> None:
+    """
+    Создаёт все таблицы в базе данных, если их ещё нет.
+    """
+    from app.domains import User, Chat, Message
+    engine = SessionManager().engine
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    print("✅ Таблицы успешно созданы (или уже существовали).")
+
+
 async def get_session() -> AsyncSession:
     session_maker = SessionManager().get_session_maker()
-    async with session_maker() as session:
-        yield session
+    session = session_maker()
+    return session
 
 
 __all__ = [

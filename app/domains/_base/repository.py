@@ -46,11 +46,13 @@ class CRUDRepository(BaseCRUDInterface[T]):
             return obj
         except IntegrityError as e:
             await self.session.rollback()
+            print(f"[DEBUG] SQLAlchemy error: {type(e).__name__} — {e}")
             raise CreateIntegrityException(
                 f"Integrity error on create {self.model.__name__}"
             ) from e
         except SQLAlchemyError as e:
             await self.session.rollback()
+            print(f"[DEBUG] SQLAlchemy error: {type(e).__name__} — {e}")
             raise CreateFailedException(
                 f"Failed to create {self.model.__name__}"
             ) from e

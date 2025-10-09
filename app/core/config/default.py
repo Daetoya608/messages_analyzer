@@ -32,9 +32,7 @@ class DefaultSettings(BaseSettings):
         """
         Get uri for connection with database.
         """
-        return "postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}".format(
-            **self.database_settings,
-        )
+        return "sqlite+aiosqlite:///./my_database.db"
 
     @property
     def database_uri_sync(self) -> str:
