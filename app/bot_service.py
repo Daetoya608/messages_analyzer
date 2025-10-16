@@ -1,34 +1,16 @@
-# from app.domains.telegram.utils import user_bot
-from pyrogram import Client, idle
-from decouple import config
-import logging
+from pyrogram import idle
+from pyrogram.handlers import MessageHandler
 
-
-logging.basicConfig(level=logging.INFO)
-api_id = config('API_ID')
-api_hash = config('API_HASH')
-phone = config('PHONE')
-login = config('LOGIN')
-
-
-from pyrogram import filters, Client
-from pyrogram.types import Message as TgMessage
-from app.domains import *
-from app.domains.telegram.service import get_telegram_service
 from app.core.db.connection.session import init_models
-
-user_bot = Client(name=login, api_id=api_id, api_hash=api_hash, phone_number=phone)
-
-
-@user_bot.on_message()
-async def handle_text_messages(client: Client, message: TgMessage):
-    print(message.text)
-    telegram_service = await get_telegram_service()
-    await telegram_service.process_new_message(message)
+from app.domains import *
+from app.domains.telegram.handlers import handle_text_messages
+from app.domains.telegram.utils import user_bot
 
 
 async def main():
     await init_models()
+    my_handler = MessageHandler(handle_text_messages)
+    user_bot.add_handler(my_handler)
     await user_bot.start()
     await idle()
 

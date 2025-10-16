@@ -1,19 +1,16 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, select, update, func
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from app.domains._base.exceptions import (
-    CreateFailedException,
-    CreateIntegrityException,
-    CRUDException,
-    DeleteFailedException,
-    NotFoundException,
-    UpdateFailedException,
-)
+from app.domains._base.exceptions import (CreateFailedException,
+                                          CreateIntegrityException,
+                                          CRUDException, DeleteFailedException,
+                                          NotFoundException,
+                                          UpdateFailedException)
 from app.domains._base.model import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
@@ -44,6 +41,8 @@ class BaseCRUDInterface[T](ABC):
     @abstractmethod
     def delete_sync(self, id: int) -> None: ...
 
+    @abstractmethod
+    def get_all(self) -> list[T]: ...
 
 
 class CRUDRepository(BaseCRUDInterface[T]):
@@ -84,6 +83,27 @@ class CRUDRepository(BaseCRUDInterface[T]):
             raise CRUDException(
                 f"Failed to get {self.model.__name__} by id={id}"
             ) from e
+
+    async def get_by_telegram_id(self, telegram_id: int) -> T | None:
+        """
+        Get model instance by telegram_id.
+        Requires that self.model defines a `telegram_id` column.
+        """
+        try:
+            stmt = select(self.model).where(self.model.telegram_id == telegram_id)
+            result = await self.session.execute(stmt)
+            return result.scalar_one_or_none()
+        except SQLAlchemyError as e:
+            raise CRUDException(
+                f"Failed to get {self.model.__name__} by id={id}"
+            ) from e
+        except AttributeError as ae:
+            print(
+                f"[DEBUG]: {self.model.__name__} does not have attribute 'telegram_id'"
+            )
+            raise AttributeError(
+                f"{self.model.__name__} does not have attribute 'telegram_id'"
+            ) from ae
 
     async def update(self, id: int, data: dict) -> T:
         try:
@@ -153,6 +173,27 @@ class CRUDRepository(BaseCRUDInterface[T]):
                 f"Failed to get {self.model.__name__} by id={id}"
             ) from e
 
+    def get_by_telegram_id_sync(self, telegram_id: int) -> T | None:
+        """
+        Get model instance by telegram_id.
+        Requires that self.model defines a `telegram_id` column.
+        """
+        try:
+            stmt = select(self.model).where(self.model.telegram_id == telegram_id)
+            result = self.session.execute(stmt)
+            return result.scalar_one_or_none()
+        except SQLAlchemyError as e:
+            raise CRUDException(
+                f"Failed to get {self.model.__name__} by id={id}"
+            ) from e
+        except AttributeError as ae:
+            print(
+                f"[DEBUG]: {self.model.__name__} does not have attribute 'telegram_id'"
+            )
+            raise AttributeError(
+                f"{self.model.__name__} does not have attribute 'telegram_id'"
+            ) from ae
+
     def update_sync(self, id: int, data: dict) -> T:
         try:
             stmt = (
@@ -187,3 +228,25 @@ class CRUDRepository(BaseCRUDInterface[T]):
             raise DeleteFailedException(
                 f"Failed to delete {self.model.__name__} id={id}"
             ) from e
+
+    def get_all(self) -> list[T]:
+        try:
+            stmt = select(self.model)
+            result = self.session.execute(stmt)
+            return list(result.scalars())
+        except SQLAlchemyError as e:
+            raise CRUDException(
+                f"Failed to get {self.model.__name__} by id={id}"
+            ) from e
+
+    def get_all_count(self) -> int:
+        try:
+            stmt = select(func.count()).select_from(self.model)
+            result = self.session.execute(stmt)
+            count = result.scalar_one()
+            return count
+        except SQLAlchemyError as e:
+            raise CRUDException(
+                f"Failed to count {self.model.__name__} records"
+            ) from e
+

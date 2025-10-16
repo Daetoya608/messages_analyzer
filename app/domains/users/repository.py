@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domains._base.repository import CRUDException, CRUDRepository
+from app.domains._base.repository import CRUDRepository
 from app.domains.users.model import User
 
 

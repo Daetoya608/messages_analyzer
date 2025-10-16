@@ -1,8 +1,7 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
-from sqlalchemy import MetaData, Integer, Date, Enum, String, Integer, TIMESTAMP
-from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
-
+from sqlalchemy import TIMESTAMP, Date, Enum, Integer, MetaData, String
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 convention = {
     "all_column_names": lambda constraint, table: "_".join(

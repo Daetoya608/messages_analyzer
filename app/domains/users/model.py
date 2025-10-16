@@ -1,4 +1,4 @@
-from sqlalchemy import Date, Enum, String, Integer, BigInteger
+from sqlalchemy import BigInteger, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domains._base import BaseModel
@@ -13,7 +13,5 @@ class User(BaseModel):
     username: Mapped[str] = mapped_column(String, nullable=False)
 
     messages: Mapped[list["Message"]] = relationship(
-        "Message",
-        back_populates="user",
-        cascade="all, delete-orphan"
+        "Message", back_populates="user", cascade="all, delete-orphan"
     )

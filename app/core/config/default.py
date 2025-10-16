@@ -6,41 +6,20 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class DefaultSettings(BaseSettings):
     """
     Default configs for application.
-
-    Usually, we have three environments: for development, testing and production.
-    But in this situation, we only have standard settings for local development.
     """
 
     ENV: str = environ.get("ENV", "local")
-    
 
-    @property
-    def database_settings(self) -> dict:
-        """
-        Get all settings for connection with database.
-        """
-        return {
-            "database": self.POSTGRES_DB,
-            "user": self.POSTGRES_USER,
-            "password": self.POSTGRES_PASSWORD,
-            "host": self.POSTGRES_HOST,
-            "port": self.POSTGRES_PORT,
-        }
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",  # важно: теперь не будет ошибок про лишние переменные
+    )
 
     @property
     def database_uri(self) -> str:
-        """
-        Get uri for connection with database.
-        """
         return "sqlite+aiosqlite:///./my_database.db"
 
     @property
     def database_uri_sync(self) -> str:
-        """
-        Get uri for connection with database.
-        """
-        return "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-            **self.database_settings,
-        )
-
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+        return "sqlite:///./my_database.db"

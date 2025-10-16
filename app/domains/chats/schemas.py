@@ -1,13 +1,16 @@
-from datetime import date, datetime
-from typing import Annotated, Self
-from uuid import UUID
+from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, Field
+from pyrogram.enums import ChatType
 
 
 class ChatBase(BaseModel):
     telegram_id: Annotated[int, Field(...)]
+    chat_type: Annotated[ChatType, Field(...)]
     title: Annotated[str | None, Field(default=None)]
+    first_name: Annotated[str | None, Field(default=None)]
+    last_name: Annotated[str | None, Field(default=None)]
 
 
 class ChatCreate(ChatBase):
@@ -23,4 +26,6 @@ class ChatRead(ChatBase):
 
 
 class ChatUpdate(BaseModel):
-    title: Annotated[str | None, Field(default=None)]
+    title: Annotated[str | None, Field(None)]
+    first_name: Annotated[str | None, Field(None)]
+    last_name: Annotated[str | None, Field(None)]

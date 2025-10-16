@@ -1,8 +1,7 @@
-from datetime import date, datetime
-from typing import Annotated, Self
-from uuid import UUID
+from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class UserBase(BaseModel):
