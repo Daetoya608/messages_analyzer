@@ -3,4 +3,15 @@ name = "messages-analyzer"
 version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "aiosqlite>=0.21.0",
+    "langchain-core>=0.3.79",
+    "langchain-ollama>=0.3.10",
+    "prompt-toolkit>=3.0.52",
+    "pydantic-settings>=2.11.0",
+    "pyrogram>=2.0.106",
+    "python-decouple>=3.8",
+    "sqlalchemy>=2.0.43",
+    "tgcrypto>=1.2.5",
+    "typer>=0.19.2",
+]
